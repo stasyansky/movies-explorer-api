@@ -4,11 +4,10 @@ const ForbiddenError = require('../errors/forbidden-err');
 const BadRequestError = require('../errors/bad-request-err');
 
 const errorMovieHandler = (err, next) => {
-  if (err.name === 'ValidationError') {
-    next(new BadRequestError('Передан некорректный id фильма'));
-  } else {
-    next(err);
+  if (err.name === 'CastError') {
+    return next(new BadRequestError('Передан некорректный id фильма'));
   }
+  return next(err);
 };
 
 module.exports.getMovies = (req, res, next) => {
@@ -24,10 +23,9 @@ module.exports.createMovie = (req, res, next) => {
     .then((movie) => res.send(movie))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные при добавлении фильма'));
-      } else {
-        next(err);
+        return next(new BadRequestError('Переданы некорректные данные при добавлении фильма'));
       }
+      return next(err);
     });
 };
 
@@ -36,7 +34,7 @@ module.exports.deleteMovie = (req, res, next) => {
     .orFail(() => new NotFoundError('Фильм с указанным id не найден'))
     .then((movie) => {
       if (JSON.stringify(movie.owner) !== JSON.stringify(req.user._id)) {
-        next(new ForbiddenError('Вы не можете удалить чужой фильм'));
+        return next(new ForbiddenError('Вы не можете удалить чужой фильм'));
       }
       return Movie.findByIdAndRemove(req.params._id)
         .then(() => res.send({ message: 'Фильм удален' }));
